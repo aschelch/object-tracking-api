@@ -27,7 +27,7 @@ def trackROI(url, roi):
     ok = tracker.init(frame, bbox)
 
     data = []
-    data.append({"x": int(bbox[0]), "y": int(bbox[1]), "h": int(bbox[2]), "w": int(bbox[3])})
+    data.append({"x": int(bbox[0]), "y": int(bbox[1]), "w": int(bbox[2]), "h": int(bbox[3])})
 
     while True:
         # Read a new frame
@@ -36,7 +36,7 @@ def trackROI(url, roi):
             break
         
         ok, bbox = tracker.update(frame)
-        data.append({"x": int(bbox[0]), "y": int(bbox[1]),"h": int(bbox[2]), "w": int(bbox[3])})
+        data.append({"x": int(bbox[0]), "y": int(bbox[1]),"w": int(bbox[2]), "h": int(bbox[3])})
 
     video.release()
 
