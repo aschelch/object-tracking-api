@@ -10,7 +10,7 @@ if __name__ == '__main__' :
     # Instead of CSRT, you can also use
  
     tracker_types = ['BOOSTING', 'MIL','KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT']
-    tracker_type = tracker_types[7]
+    tracker_type = tracker_types[2]
  
     if int(minor_ver) < 3:
         tracker = cv2.Tracker_create(tracker_type)
@@ -34,7 +34,7 @@ if __name__ == '__main__' :
 
     # Read video
     # video = cv2.VideoCapture("nascar.mp4")
-    video = cv2.VideoCapture("street.mp4")
+    video = cv2.VideoCapture("marc.mp4")
     #video = cv2.VideoCapture(0) # for using CAM
 
     # Exit if video not opened.
@@ -49,11 +49,11 @@ if __name__ == '__main__' :
         sys.exit()
 
     # Define an initial bounding box
-    bbox = (828, 316, 368, 174) #nascar
-    bbox = (846, 507, 107, 146) #street
+    # bbox = (828, 316, 368, 174) #nascar
+    #bbox = (846, 507, 107, 146) #street
 
     # Uncomment the line below to select a different bounding box
-    #bbox = cv2.selectROI(frame, False)
+    bbox = cv2.selectROI(frame, False)
     #print(bbox)
 
     # Initialize tracker with first frame and bounding box

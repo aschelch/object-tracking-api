@@ -1,1 +1,2 @@
-web: gunicorn track:app --timeout 20
+web: gunicorn track:app
+worker: python worker.py

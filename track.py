@@ -1,61 +1,33 @@
 from flask import Flask, request, jsonify
-import cv2
-import sys
+from utils import trackROI, InputException
+from rq import Queue
+from rq.job import Job
+from worker import conn
 
+q = Queue(connection=conn)
 app = Flask(__name__)
 
-tracker = cv2.TrackerCSRT_create()
-
-@app.route('/track', methods=['POST'])
-def post_something():
+@app.route('/direct', methods=['POST'])
+def post_direct():
     roi = request.form.get('roi')
     url = request.form.get('video')
+    try:
+        result = trackROI(url, roi)
+        return jsonify(success=True, result=result)
+    except InputException as err:
+        return jsonify(success=False, message=err.message), 400
 
-    print(f"ROI: {roi}")
-    print(f"Video: {url}")
+@app.route('/job', methods=['POST'])
+def post_job():
+    roi = request.form.get('roi')
+    url = request.form.get('video')
+    result = q.enqueue(trackROI, url, roi)
+    return jsonify(success=True, job=result.id)
 
-    response = {}
-
-    video = cv2.VideoCapture(url)
-   
-    if not video.isOpened():
-        response["ERROR"] = "Could not open video"
-        return jsonify(response)
-
-    ok, frame = video.read()
-    if not ok:
-        response["ERROR"] = "Cannot read video file"
-        return jsonify(response)
-
-    bbox = tuple(int(num) for num in roi.split(','))
-
-
-    print(f"Processing...")
-
-    # Initialize tracker with first frame and bounding box
-    ok = tracker.init(frame, bbox)
-    response["DATA"] = []
-    response["DATA"].append({
-           "x": int(bbox[0]), "y": int(bbox[1]),
-           "h": int(bbox[2]), "w": int(bbox[3])
-    })
-
-    while True:
-        # Read a new frame
-        ok, frame = video.read()
-        if not ok:
-            break
-        
-        ok, bbox = tracker.update(frame)
-        response["DATA"].append({
-           "x": int(bbox[0]), "y": int(bbox[1]),
-           "h": int(bbox[2]), "w": int(bbox[3])
-        })
-
-    video.release()
-
-    # Return the response in json format
-    return jsonify(response)
+@app.route('/job/<job_id>', methods=['GET'])
+def get_job(job_id):
+    job = Job.fetch(job_id, connection=conn)
+    return jsonify(success=True, status=job.get_status(), result=job.result)
 
 if __name__ == '__main__':
     # Threaded option to enable multiple instances for multiple user access support
