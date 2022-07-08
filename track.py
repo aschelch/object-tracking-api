@@ -6,16 +6,17 @@ app = Flask(__name__)
 
 tracker = cv2.TrackerCSRT_create()
 
+@app.route('/track', methods=['POST'])
+def post_something():
+    roi = request.form.get('roi')
+    url = request.form.get('video')
 
-@app.route('/track/', methods=['GET'])
-def respond():
-    # Retrieve the name from the url parameter /track/?roi=
-    roi = request.args.get("roi", None)
-    print(f"Received: {roi}")
+    print(f"ROI: {roi}")
+    print(f"Video: {url}")
 
     response = {}
 
-    video = cv2.VideoCapture("poc/street.mp4")
+    video = cv2.VideoCapture(url)
    
     if not video.isOpened():
         response["ERROR"] = "Could not open video"
@@ -28,9 +29,16 @@ def respond():
 
     bbox = tuple(int(num) for num in roi.split(','))
 
+
+    print(f"Processing...")
+
     # Initialize tracker with first frame and bounding box
     ok = tracker.init(frame, bbox)
     response["DATA"] = []
+    response["DATA"].append({
+           "x": int(bbox[0]), "y": int(bbox[1]),
+           "h": int(bbox[2]), "w": int(bbox[3])
+    })
 
     while True:
         # Read a new frame
@@ -48,30 +56,6 @@ def respond():
 
     # Return the response in json format
     return jsonify(response)
-
-
-@app.route('/post/', methods=['POST'])
-def post_something():
-    param = request.form.get('name')
-    print(param)
-    # You can add the test cases you made in the previous function, but in our case here you are just testing the POST functionality
-    if param:
-        return jsonify({
-            "Message": f"Welcome {name} to our awesome API!",
-            # Add this option to distinct the POST request
-            "METHOD": "POST"
-        })
-    else:
-        return jsonify({
-            "ERROR": "No name found. Please send a name."
-        })
-
-
-@app.route('/')
-def index():
-    # A welcome message to test our server
-    return "<h1>Welcome to our medium-greeting-api!</h1>"
-
 
 if __name__ == '__main__':
     # Threaded option to enable multiple instances for multiple user access support
