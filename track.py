@@ -1,25 +1,50 @@
 from flask import Flask, request, jsonify
+import cv2
+import sys
+
 app = Flask(__name__)
 
+tracker = cv2.TrackerCSRT_create()
 
-@app.route('/getmsg/', methods=['GET'])
+
+@app.route('/track/', methods=['GET'])
 def respond():
-    # Retrieve the name from the url parameter /getmsg/?name=
-    name = request.args.get("name", None)
-
-    # For debugging
-    print(f"Received: {name}")
+    # Retrieve the name from the url parameter /track/?roi=
+    roi = request.args.get("roi", None)
+    print(f"Received: {roi}")
 
     response = {}
 
-    # Check if the user sent a name at all
-    if not name:
-        response["ERROR"] = "No name found. Please send a name."
-    # Check if the user entered a number
-    elif str(name).isdigit():
-        response["ERROR"] = "The name can't be numeric. Please send a string."
-    else:
-        response["MESSAGE"] = f"Welcome {name} to our awesome API!"
+    video = cv2.VideoCapture("poc/street.mp4")
+   
+    if not video.isOpened():
+        response["ERROR"] = "Could not open video"
+        return jsonify(response)
+
+    ok, frame = video.read()
+    if not ok:
+        response["ERROR"] = "Cannot read video file"
+        return jsonify(response)
+
+    bbox = tuple(int(num) for num in roi.split(','))
+
+    # Initialize tracker with first frame and bounding box
+    ok = tracker.init(frame, bbox)
+    response["DATA"] = []
+
+    while True:
+        # Read a new frame
+        ok, frame = video.read()
+        if not ok:
+            break
+        
+        ok, bbox = tracker.update(frame)
+        response["DATA"].append({
+           "x": int(bbox[0]), "y": int(bbox[1]),
+           "h": int(bbox[2]), "w": int(bbox[3])
+        })
+
+    video.release()
 
     # Return the response in json format
     return jsonify(response)
