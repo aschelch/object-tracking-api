@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from utils import trackROI, InputException
 from rq import Queue
 from rq.job import Job
@@ -6,6 +7,7 @@ from worker import conn
 
 q = Queue(connection=conn)
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/direct', methods=['POST'])
 def post_direct():
