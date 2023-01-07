@@ -13,8 +13,10 @@ CORS(app)
 def post_direct():
     roi = request.form.get('roi')
     url = request.form.get('video')
+    start = float(request.form.get('start'))
+    end = float(request.form.get('end'))
     try:
-        result = trackROI(url, roi)
+        result = trackROI(url, roi, start, end)
         return jsonify(success=True, result=result)
     except InputException as err:
         return jsonify(success=False, message=err.message), 400
