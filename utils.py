@@ -4,24 +4,28 @@ from flask import jsonify
 
 # tracker = cv2.TrackerCSRT_create()
 tracker = cv2.TrackerMIL_create()
+#tracker = cv2.TrackerKCF_create()
 
 class InputException(BaseException):
     def __init__(self, message):
         self.message = message
 
-def trackROI(url, roi, start, end):
+def trackROI(url, roi, start, end, rps = 5):
 
     video = cv2.VideoCapture(url)
 
-    fps = video.get(cv2.CAP_PROP_FPS)
+    fps = round(video.get(cv2.CAP_PROP_FPS))
     totalNoFrames = video.get(cv2.CAP_PROP_FRAME_COUNT)
     durationInSeconds = totalNoFrames / fps
 
     startFrame = round(start * fps)
     endFrame = round(end * fps)
 
+    foo = round(fps/rps)
+
     print("roi:", roi)
     print("fps:", fps)
+    print("rps:", rps)
     print("totalNoFrames:", totalNoFrames)
     print("durationInSeconds:", durationInSeconds, "s")
 
@@ -42,7 +46,12 @@ def trackROI(url, roi, start, end):
     ok = tracker.init(frame, bbox)
 
     data = []
-    data.append({"x": int(bbox[0]), "y": int(bbox[1]), "w": int(bbox[2]), "h": int(bbox[3])})
+    # data.append({
+    #     "t": i*(1.0/fps),
+    #     "x": int(bbox[0]), 
+    #     "y": int(bbox[1]), 
+    #     "w": int(bbox[2]), 
+    #     "h": int(bbox[3])})
 
     i = -1
     while True:
@@ -58,9 +67,19 @@ def trackROI(url, roi, start, end):
 
         if endFrame <= i:
             break
+
         
         ok, bbox = tracker.update(frame)
-        data.append({"x": int(bbox[0]), "y": int(bbox[1]),"w": int(bbox[2]), "h": int(bbox[3])})
+
+        if (i % foo) != 0:
+            continue
+
+        data.append({
+            "t": i*(1.0/fps),
+            "x": int(bbox[0]), 
+            "y": int(bbox[1]),
+            "w": int(bbox[2]), 
+            "h": int(bbox[3])})
 
     video.release()
 
